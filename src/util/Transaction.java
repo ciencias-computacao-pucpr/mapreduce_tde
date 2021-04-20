@@ -28,15 +28,25 @@ public class Transaction {
         // flow
         this.flow = values[4];
         // trade_usd
-        this.tradeUsd = Strings.isNullOrEmpty(values[5]) ? 0 : Double.parseDouble(values[5]);
+        this.tradeUsd = Strings.isNullOrEmpty(values[5]) ? 0.0 : Double.parseDouble(values[5]);
         // weight_kg
-        this.weightKg = Strings.isNullOrEmpty(values[6]) ? 0 : Double.parseDouble(values[6]);
+        this.weightKg = Strings.isNullOrEmpty(values[6]) ? 0.0 : Double.parseDouble(values[6]);
         // quantity_name
         this.quantityName = values[7];
         // quantity
         this.quantity = Strings.isNullOrEmpty(values[8]) ? 0 : Double.parseDouble(values[8]);
         // category
         this.category = values[9];
+    }
+
+    public static Transaction getInstanceNoHeadersNoTotals(String line) {
+        if (Strings.isNullOrEmpty(line)) return null;
+        if (line.equals(JobUtils.TXS_FILE_HEADER)) return null;
+
+        Transaction ret = new Transaction(line);
+        if (ret.getCommCode().equals("TOTAL")) return null;
+
+        return ret;
     }
 
     public String getCountryOrArea() {

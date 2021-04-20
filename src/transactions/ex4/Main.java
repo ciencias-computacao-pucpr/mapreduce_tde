@@ -12,7 +12,6 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
-import util.JobUtils;
 import util.Paths;
 import util.Transaction;
 
@@ -48,15 +47,10 @@ public class Main {
     public static class CommMapper extends Mapper<LongWritable, Text, IntWritable, SumCount> {
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-            if (value.toString().equals(JobUtils.TXS_FILE_HEADER))
-                return;
-
-            Transaction t = new Transaction(value.toString());
-
-            if (t.getCommCode().equals("TOTAL"))
-                return;
-
-            context.write(new IntWritable(t.getYear()), new SumCount(t.getTradeUsd(), 1));
+            Transaction t = Transaction.getInstanceNoHeadersNoTotals(value.toString());
+            if (t != null) {
+                context.write(new IntWritable(t.getYear()), new SumCount(t.getTradeUsd(), 1));
+            }
         }
     }
 
@@ -78,8 +72,8 @@ public class Main {
         protected void reduce(IntWritable key, Iterable<SumCount> values, Context context) throws IOException, InterruptedException {
             SumCount total = new SumCount(0.0,0);
             for (SumCount value : values) {
-                total.setCount(total.getCount() + value.getCount());
                 total.setTotal(total.getTotal() + value.getTotal());
+                total.setCount(total.getCount() + value.getCount());
             }
 
             context.write(key, new DoubleWritable(total.getTotal() / total.getCount()));

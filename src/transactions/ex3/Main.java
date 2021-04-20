@@ -99,15 +99,11 @@ public class Main {
     public static class CommodityIn2016 extends Mapper<Object, Text, CommFlowType, DoubleWritable> {
         @Override
         protected void map(Object key, Text value, Context context) throws IOException, InterruptedException {
-            if (value.toString().equals(header))
-                return;
+            Transaction t = Transaction.getInstanceNoHeadersNoTotals(value.toString());
 
-            Transaction t = new Transaction(value.toString());
+            if (t == null) return;
 
-            if (t.getCommCode().equals("TOTAL"))
-                return;
-
-            context.write(new CommFlowType(t.getCommodity(), t.getFlow()), new DoubleWritable(t.getQuantity()));
+            context.write(new CommFlowType(t.getCommodity(), t.getFlow()), new DoubleWritable(t.getWeightKg()));
         }
     }
 

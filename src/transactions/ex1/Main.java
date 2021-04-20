@@ -30,9 +30,12 @@ public class Main {
 
     public static class BrazilMapper extends Mapper<Object, Text, Text, LongWritable> {
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
-            if (!header.equals(value.toString())) {
-                final Transaction transaction = new Transaction(value.toString());
-                context.write(new Text(transaction.getCountryOrArea()), one);
+            Transaction t = Transaction.getInstanceNoHeadersNoTotals(value.toString());
+
+            if (t == null) return;
+
+            if (t.getCountryOrArea().equalsIgnoreCase("brazil")) {
+                context.write(new Text(t.getCountryOrArea()), one);
             }
         }
     }
@@ -40,13 +43,11 @@ public class Main {
     public static class BrazilReducer extends Reducer<Text, LongWritable, Text, LongWritable> {
         @Override
         protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
-            if (key.equals(brazil)) {
-                long count = 0;
-                for (LongWritable v : values) {
-                    count += v.get();
-                }
-                context.write(key, new LongWritable(count));
+            long count = 0;
+            for (LongWritable v : values) {
+                count += v.get();
             }
+            context.write(key, new LongWritable(count));
         }
     }
 }

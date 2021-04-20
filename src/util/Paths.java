@@ -20,4 +20,8 @@ public class Paths {
         }
         return false;
     }
+
+    public static Path of(String p) {
+        return new Path(p);
+    }
 }
