@@ -3,6 +3,7 @@ package util;
 import org.apache.hadoop.shaded.com.google.common.base.Strings;
 
 public class Transaction {
+    public static final String TXS_FILE_HEADER = "country_or_area;year;comm_code;commodity;flow;trade_usd;weight_kg;quantity_name;quantity;category";
     private final String countryOrArea;
     private final int year;
     private final String commCode;
@@ -41,7 +42,7 @@ public class Transaction {
 
     public static Transaction getInstanceNoHeadersNoTotals(String line) {
         if (Strings.isNullOrEmpty(line)) return null;
-        if (line.equals(JobUtils.TXS_FILE_HEADER)) return null;
+        if (line.equals(TXS_FILE_HEADER)) return null;
 
         Transaction ret = new Transaction(line);
         if (ret.getCommCode().equals("TOTAL")) return null;

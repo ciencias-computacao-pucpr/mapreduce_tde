@@ -1,7 +1,6 @@
 package transactions.ex5;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.examples.pi.math.Bellard;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -75,7 +74,7 @@ public class Main {
         }
     }
 
-    public static class UnitTypeYearCategoryReducer extends Reducer<UnitTypeYearCategory, SumCount, UnitTypeYearCategory, DoubleWritable> {
+    public static class UnitTypeYearCategoryReducer extends Reducer<UnitTypeYearCategory, SumCount, UnitTypeYearCategory, Text> {
         @Override
         protected void reduce(UnitTypeYearCategory key, Iterable<SumCount> values, Context context) throws IOException, InterruptedException {
             SumCount total = new SumCount();
@@ -86,8 +85,7 @@ public class Main {
                 total.setCount(totalCount);
             });
 
-
-            context.write(key, new DoubleWritable(total.getTotal() / total.getCount()));
+            context.write(key, new Text(String.format("%.2f", total.getTotal() / total.getCount())));
         }
     }
 }

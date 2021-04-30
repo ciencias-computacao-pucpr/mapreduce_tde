@@ -1,5 +1,6 @@
 package transactions.ex3.beans;
 
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
 import java.io.DataInput;

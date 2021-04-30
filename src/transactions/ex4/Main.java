@@ -38,7 +38,7 @@ public class Main {
 
         j.setReducerClass(CommReducer.class);
         j.setOutputValueClass(IntWritable.class);
-        j.setOutputValueClass(DoubleWritable.class);
+        j.setOutputValueClass(Text.class);
 
         Paths.recursiveDeleteIfExists(output);
         System.exit(j.waitForCompletion(false) ? 0 : 1);
@@ -67,7 +67,7 @@ public class Main {
         }
     }
 
-    public static class CommReducer extends Reducer<IntWritable, SumCount, IntWritable, DoubleWritable> {
+    public static class CommReducer extends Reducer<IntWritable, SumCount, IntWritable, Text> {
         @Override
         protected void reduce(IntWritable key, Iterable<SumCount> values, Context context) throws IOException, InterruptedException {
             SumCount total = new SumCount(0.0,0);
@@ -76,7 +76,7 @@ public class Main {
                 total.setCount(total.getCount() + value.getCount());
             }
 
-            context.write(key, new DoubleWritable(total.getTotal() / total.getCount()));
+            context.write(key, new Text(String.format("%.2f", total.getTotal() / total.getCount())));
         }
     }
 }

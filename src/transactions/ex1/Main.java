@@ -1,11 +1,16 @@
 package transactions.ex1;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import util.JobBuilder;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.util.GenericOptionsParser;
+import util.Paths;
 import util.Transaction;
 
 import java.io.IOException;
@@ -13,19 +18,28 @@ import java.io.IOException;
 public class Main {
 
     public static final LongWritable one = new LongWritable(1);
-    public static final Text brazil = new Text("Brazil");
-    public static final String header = "country_or_area;year;comm_code;commodity;flow;trade_usd;weight_kg;quantity_name;quantity;category";
 
     public static void main(String[] args) throws Exception {
+        Configuration conf = new Configuration();
+        GenericOptionsParser optionsParser = new GenericOptionsParser(conf, args);
+        String[] files = optionsParser.getRemainingArgs();
+        Path input = new Path(files[0]);
+        Path output = new Path(files[1]);
+        Job j = Job.getInstance(conf, "ex1");
+        j.setJarByClass(Main.class);
+        FileInputFormat.addInputPath(j, input);
+        FileOutputFormat.setOutputPath(j, output);
 
-        Job job = new JobBuilder(Main.class ,args)
-                .deleteOutputIfExists()
-                .name("transactions.brazil")
-                .mapperClass(BrazilMapper.class, Text.class, LongWritable.class)
-                .reducerClass(BrazilReducer.class, Text.class, LongWritable.class)
-                .build();
+        j.setMapperClass(BrazilMapper.class);
+        j.setMapOutputKeyClass(Text.class);
+        j.setMapOutputValueClass(LongWritable.class);
 
-        System.exit(job.waitForCompletion(false) ? 0 : 1);
+        j.setReducerClass(BrazilReducer.class);
+        j.setOutputKeyClass(Text.class);
+        j.setOutputValueClass(LongWritable.class);
+
+        Paths.recursiveDeleteIfExists(output);
+        System.exit(j.waitForCompletion(false) ? 0 : 1);
     }
 
     public static class BrazilMapper extends Mapper<Object, Text, Text, LongWritable> {
@@ -42,7 +56,8 @@ public class Main {
 
     public static class BrazilReducer extends Reducer<Text, LongWritable, Text, LongWritable> {
         @Override
-        protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
+        protected void reduce(Text key, Iterable<LongWritable> values, Context context)
+                throws IOException, InterruptedException {
             long count = 0;
             for (LongWritable v : values) {
                 count += v.get();

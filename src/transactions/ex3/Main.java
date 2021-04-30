@@ -3,7 +3,6 @@ package transactions.ex3;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -20,54 +19,61 @@ import java.io.IOException;
 
 public class Main {
 
-    public static final LongWritable one = new LongWritable(1);
-    public static final String header = "country_or_area;year;comm_code;commodity;flow;trade_usd;weight_kg;quantity_name;quantity;category";
-
     public static void main(String[] args) throws Exception {
         final Configuration conf = new Configuration();
         final GenericOptionsParser genericOptionsParser = new GenericOptionsParser(conf, args);
-        final Job j1 = Job.getInstance(conf, "2016_pt1");
-        j1.setJarByClass(Main.class);
-
         final String[] files = genericOptionsParser.getRemainingArgs();
-        Path inputFile = new Path(files[0]);
-        Path outputDir = new Path(files[1]);
-        Path intermediate = new Path(files[1] + "_intermediate");
+        final Path inputFile = new Path(files[0]);
+        final Path outputDir = new Path(files[1]);
+        final Path intermediate = new Path(files[1] + "_intermediate");
 
-        FileInputFormat.addInputPath(j1, inputFile);
-        FileOutputFormat.setOutputPath(j1, intermediate);
-
-        j1.setMapperClass(CommodityIn2016.class);
-        j1.setMapOutputKeyClass(CommFlowType.class);
-        j1.setMapOutputValueClass(DoubleWritable.class);
-
-        j1.setReducerClass(CommodityIn2016Reducer.class);
-        j1.setOutputKeyClass(CommFlowType.class);
-        j1.setMapOutputValueClass(DoubleWritable.class);
+        final Job j1 = Job.getInstance(conf, "ex3_pt1");
+        setupJob1(j1, inputFile, intermediate);
 
         Paths.recursiveDeleteIfExists(intermediate);
+
         if (!j1.waitForCompletion(false)) {
             System.out.println("Primeira parte falhou");
             System.exit(1);
         }
 
-        Job j2 = Job.getInstance(conf, "2016_pt2");
-        j2.setJarByClass(Main.class);
+        Job j2 = Job.getInstance(conf, "ex3_pt2");
 
-        j2.setMapperClass(MostIn2016Mapper.class);
-        j2.setMapOutputKeyClass(Text.class);
-        j2.setMapOutputValueClass(CommAmount.class);
-
-        j2.setReducerClass(MostIn2016Reducer.class);
-        j2.setOutputKeyClass(Text.class);
-        j2.setOutputValueClass(Text.class);
-
-        FileInputFormat.addInputPath(j2, intermediate);
-        FileOutputFormat.setOutputPath(j2, outputDir);
+        setupJob2(j2, intermediate, outputDir);
 
         Paths.recursiveDeleteIfExists(outputDir);
 
         System.exit(j2.waitForCompletion(false) ? 0 : 1);
+    }
+
+    private static void setupJob1(Job job, Path inputFile, Path intermediate) throws IOException {
+        FileInputFormat.addInputPath(job, inputFile);
+        FileOutputFormat.setOutputPath(job, intermediate);
+
+        job.setJarByClass(Main.class);
+
+        job.setMapperClass(CommodityIn2016.class);
+        job.setMapOutputKeyClass(CommFlowType.class);
+        job.setMapOutputValueClass(DoubleWritable.class);
+
+        job.setReducerClass(CommodityIn2016Reducer.class);
+        job.setOutputKeyClass(CommFlowType.class);
+        job.setMapOutputValueClass(DoubleWritable.class);
+    }
+
+    private static void setupJob2(Job job, Path input, Path output) throws IOException {
+        FileInputFormat.addInputPath(job, input);
+        FileOutputFormat.setOutputPath(job, output);
+
+        job.setJarByClass(Main.class);
+
+        job.setMapperClass(MostIn2016Mapper.class);
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(CommAmount.class);
+
+        job.setReducerClass(MostIn2016Reducer.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(Text.class);
     }
 
     public static class MostIn2016Mapper extends Mapper<Object, Text, Text, CommAmount> {
